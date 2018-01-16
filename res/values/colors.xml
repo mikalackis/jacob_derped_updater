@@ -1,0 +1,9 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+  <color name="colorAccent">#0000aa</color>
+  <color name="colorPrimary">#0000aa</color>
+  <color name="colorPrimaryDark">#000096</color>
+  <color name="textColor">#ffffff</color>
+  <color name="textColorPrimary">#ffffff</color>
+  <color name="windowBackground">#474747</color>
+  <color name="navigationBarColor">#000000</color>
+</resources>
