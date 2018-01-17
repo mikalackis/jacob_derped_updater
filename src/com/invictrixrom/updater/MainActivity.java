@@ -1,11 +1,16 @@
 package com.invictrixrom.updater;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.os.UpdateEngine;
@@ -14,10 +19,18 @@ import java.util.zip.ZipFile;
 
 public class MainActivity extends Activity implements UpdaterListener {
 
-    TextView statusText, progressText;
-    Button installButton, chooseButton;
+    private TextView statusText;
+    private Button installButton, chooseButton;
+    private ProgressBar progressBar;
 
-    String filePath = "";
+    private String filePath = "";
+
+    private static final int notification_id = 10242048;
+    private static final String channel_id = "com.invictrixrom.updater";
+    private static final String channel_name = "Invictrix ROM Updater";
+    private static final String channel_description = "Invictrix ROM Updater";
+    private NotificationManager mNotificationManager;
+    private Notification.Builder mBuilder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,10 +40,9 @@ public class MainActivity extends Activity implements UpdaterListener {
         chooseButton = findViewById(R.id.choose_zip);
         installButton = findViewById(R.id.install);
         statusText = findViewById(R.id.status);
-        progressText = findViewById(R.id.progress_text);
+        progressBar = findViewById(R.id.install_progress);
 
         statusText.setText("Select a Zip to Update");
-        progressText.setText("Waiting...");
 
         chooseButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -54,6 +66,8 @@ public class MainActivity extends Activity implements UpdaterListener {
             public void onClick(View v) {
                 if(!filePath.isEmpty()) {
                     statusText.setText("Checking if A/B zip");
+                    buildNotification();
+                    progressBar.setIndeterminate(true);
                     ZipFile zipFile;
                     try {
                         zipFile = new ZipFile(filePath);
@@ -61,8 +75,13 @@ public class MainActivity extends Activity implements UpdaterListener {
                         zipFile.close();
                         if (isABUpdate) {
                             ABUpdate.start(filePath, MainActivity.this);
+                        } else {
+                            progressBar.setIndeterminate(false);
+                            progressBar.setMax(100);
+                            finishNotification("Not an A/B Update", true);
                         }
                     } catch (Exception ex) {
+                        finishNotification("Zip Open Error", true);
                         statusText.setText("Could not open zip file, make sure you're using a file explorer and not DocumentsUI.");
                     }
                 }
@@ -86,106 +105,173 @@ public class MainActivity extends Activity implements UpdaterListener {
 
     @Override
     public void progressUpdate(int progress) {
-        progressText.setText("Installing Update: " + progress + "%");
+        progressBar.setProgress(progress);
+        updateNotification(progress);
     }
 
     @Override
     public void notifyUpdateStatusChange(int status) {
+        String statusString = "";
         switch (status) {
             case UpdateEngine.UpdateStatusConstants.IDLE: {
-                statusText.setText("Status: Idle");
+                statusString = "Idle";
             }
                 break;
             case UpdateEngine.UpdateStatusConstants.CHECKING_FOR_UPDATE: {
-                statusText.setText("Status: Checking For Update");
+                statusString = "Checking For Update";
             }
                 break;
             case UpdateEngine.UpdateStatusConstants.UPDATE_AVAILABLE: {
-                statusText.setText("Status: Update Available");
+                statusString = "Update Available";
             }
                 break;
             case UpdateEngine.UpdateStatusConstants.DOWNLOADING: {
-                statusText.setText("Status: Downloading");
+                statusString = "Downloading";
             }
                 break;
             case UpdateEngine.UpdateStatusConstants.VERIFYING: {
-                statusText.setText("Status: Verifying");
+                statusString = "Verifying";
             }
                 break;
             case UpdateEngine.UpdateStatusConstants.FINALIZING: {
-                statusText.setText("Status: Finalizing");
+                statusString = "Finalizing";
             }
                 break;
             case UpdateEngine.UpdateStatusConstants.UPDATED_NEED_REBOOT: {
-                statusText.setText("Status: Updated. Needs Reboot");
+                statusString = "Updated. Needs Reboot";
             }
                 break;
             case UpdateEngine.UpdateStatusConstants.REPORTING_ERROR_EVENT: {
-                statusText.setText("Status: Error");
+                statusString = "Error";
             }
                 break;
             case UpdateEngine.UpdateStatusConstants.ATTEMPTING_ROLLBACK: {
-                statusText.setText("Status: Attempting Rollback");
+                statusString = "Attempting Rollback";
             }
                 break;
             case UpdateEngine.UpdateStatusConstants.DISABLED: {
-                statusText.setText("Status: Disabled");
+                statusString = "Disabled";
             }
                 break;
             default:
                 break;
         }
+        statusText.setText(statusString);
+        updateNotification(statusString);
     }
 
     @Override
     public void notifyUpdateComplete(int status) {
+        String statusString = "";
+        boolean isError = true;
         switch (status) {
             case UpdateEngine.ErrorCodeConstants.SUCCESS: {
-                statusText.setText("Status: Update Success");
+                statusString = "Update Success";
+                isError = false;
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.ERROR: {
-                statusText.setText("Status: Update Error");
+                statusString = "Update Error";
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.FILESYSTEM_COPIER_ERROR: {
-                statusText.setText("Status: Filesystem Error");
+                statusString = "Filesystem Error";
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.POST_INSTALL_RUNNER_ERROR: {
-                statusText.setText("Status: Post Install Error");
+                statusString = "Post Install Error";
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.PAYLOAD_MISMATCHED_TYPE_ERROR: {
-                statusText.setText("Status: Payload Mismatched Type");
+                statusString = "Payload Mismatched Type";
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.INSTALL_DEVICE_OPEN_ERROR: {
-                statusText.setText("Status: Install Device Already Open");
+                statusString = "Install Device Already Open";
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.KERNEL_DEVICE_OPEN_ERROR: {
-                statusText.setText("Status: Kernel Device Already Open");
+                statusString = "Kernel Device Already Open";
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.DOWNLOAD_TRANSFER_ERROR: {
-                statusText.setText("Status: Download Transfer Error");
+                statusString = "Download Transfer Error";
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.PAYLOAD_HASH_MISMATCH_ERROR: {
-                statusText.setText("Status: Payload Hash Error");
+                statusString = "Payload Hash Error";
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.PAYLOAD_SIZE_MISMATCH_ERROR: {
-                statusText.setText("Status: Payload Size Mismatch Error");
+                statusString = "Payload Size Mismatch Error";
             }
                 break;
             case UpdateEngine.ErrorCodeConstants.DOWNLOAD_PAYLOAD_VERIFICATION_ERROR: {
-                statusText.setText("Status: Download Payload Verification Error");
+                statusString = "Download Payload Verification Error";
             }
                 break;
             default:
                 break;
         }
+        statusText.setText(statusString);
+        progressBar.setProgress(100);
+        finishNotification(statusString, isError);
+    }
+
+    private void buildNotification() {
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationChannel mChannel = new NotificationChannel(channel_id, channel_name, NotificationManager.IMPORTANCE_MAX);
+        mChannel.setDescription(channel_description);
+        mChannel.enableLights(true);
+        mNotificationManager.createNotificationChannel(mChannel);
+
+        mBuilder = new Notification.Builder(this, channel_id)
+                        .setSmallIcon(R.drawable.ic_stat_system_update)
+                        .setContentTitle("Installing OTA")
+                        .setContentText("Verifying Valid A/B Update")
+                        .setProgress(100, 0, true)
+                        .setOngoing(true);
+
+        mNotificationManager.notify(notification_id, mBuilder.build());
+    }
+
+    private int lastProgress = 0;
+
+    private void updateNotification(String status) {
+        updateNotification(status, lastProgress);
+        mBuilder.setContentTitle("Installing OTA")
+                .setContentText(status);
+
+        mNotificationManager.notify(notification_id, mBuilder.build());
+    }
+
+    private void updateNotification(int progress) {
+        mBuilder.setContentTitle("Installing OTA")
+                .setProgress(100, progress, false);
+
+        mNotificationManager.notify(notification_id, mBuilder.build());
+    }
+
+    private void updateNotification(String status, int progress) {
+        mBuilder.setContentTitle("Installing OTA")
+                .setContentText(status)
+                .setProgress(100, progress, false);
+
+        mNotificationManager.notify(notification_id, mBuilder.build());
+    }
+
+    private void finishNotification(String status, boolean error) {
+       if(error) {
+         mBuilder.setContentTitle("Install Error")
+                 .setSmallIcon(R.drawable.ic_stat_error);
+       } else {
+         mBuilder.setContentTitle("Install Success");
+       }
+
+       mBuilder.setContentText(status)
+               .setProgress(0, 0, false)
+               .setOngoing(false);
+
+        mNotificationManager.notify(notification_id, mBuilder.build());
     }
 }
