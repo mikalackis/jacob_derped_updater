@@ -230,7 +230,8 @@ public class MainActivity extends Activity implements UpdaterListener {
 				.setContentTitle("Installing OTA")
 				.setContentText("Verifying Valid A/B Update")
 				.setProgress(100, 0, true)
-				.setOngoing(true);
+				.setOngoing(true)
+				.setOnlyAlertOnce(true);
 
 		mNotificationManager.notify(notification_id, mBuilder.build());
 	}
