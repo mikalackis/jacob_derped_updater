@@ -79,6 +79,7 @@ public class MainActivity extends Activity implements UpdaterListener {
 							progressBar.setIndeterminate(false);
 							progressBar.setMax(100);
 							finishNotification("Not an A/B Update", true);
+							statusText.setText("Not an A/B Update");
 						}
 					} catch (Exception ex) {
 						finishNotification("Zip Open Error", true);
@@ -105,6 +106,8 @@ public class MainActivity extends Activity implements UpdaterListener {
 
 	@Override
 	public void progressUpdate(int progress) {
+		progressBar.setIndeterminate(false);
+		progressBar.setMax(100);
 		progressBar.setProgress(progress);
 		updateNotification(progress);
 	}
@@ -236,42 +239,39 @@ public class MainActivity extends Activity implements UpdaterListener {
 		mNotificationManager.notify(notification_id, mBuilder.build());
 	}
 
-	private int lastProgress = 0;
-
 	private void updateNotification(String status) {
-		updateNotification(status, lastProgress);
-		mBuilder.setContentTitle("Installing OTA")
-			.setContentText(status);
+		mBuilder = mBuilder.setContentTitle("Installing OTA")
+				.setContentText(status);
 
 		mNotificationManager.notify(notification_id, mBuilder.build());
 	}
 
 	private void updateNotification(int progress) {
-		mBuilder.setContentTitle("Installing OTA")
-			.setProgress(100, progress, false);
+		mBuilder = mBuilder.setContentTitle("Installing OTA")
+				.setProgress(100, progress, false);
 
 		mNotificationManager.notify(notification_id, mBuilder.build());
 	}
 
 	private void updateNotification(String status, int progress) {
-		mBuilder.setContentTitle("Installing OTA")
-			.setContentText(status)
-			.setProgress(100, progress, false);
+		mBuilder = mBuilder.setContentTitle("Installing OTA")
+				.setContentText(status)
+				.setProgress(100, progress, false);
 
 		mNotificationManager.notify(notification_id, mBuilder.build());
 	}
 
 	private void finishNotification(String status, boolean error) {
 		if(error) {
-			mBuilder.setContentTitle("Install Error")
-				.setSmallIcon(R.drawable.ic_stat_error);
+			mBuilder = mBuilder.setContentTitle("Install Error")
+					.setSmallIcon(R.drawable.ic_stat_error);
 		} else {
-			mBuilder.setContentTitle("Install Success");
+			mBuilder = mBuilder.setContentTitle("Install Success");
 		}
 
 		progressBar.setProgress(0);
 
-		mBuilder.setContentText(status)
+		mBuilder = mBuilder.setContentText(status)
 			.setProgress(0, 0, false)
 			.setOngoing(false);
 
