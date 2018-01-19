@@ -15,5 +15,9 @@ LOCAL_AAPT_FLAGS := \
 LOCAL_PACKAGE_NAME := Updater
 LOCAL_PRIVILEGED_MODULE := true
 
+LOCAL_JNI_SHARED_LIBRARIES := libinvupdater libinvdd
+LOCAL_REQUIRED_MODULES := libinvupdater libinvdd
+
 include $(BUILD_PACKAGE)
 
+include $(call all-makefiles-under,$(LOCAL_PATH))

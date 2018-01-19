@@ -48,15 +48,15 @@ class ABUpdate {
 		@Override
 		public void onStatusUpdate(int status, float percent) {
 			int progress = Math.round(percent * 100);
-			mUpdateListener.progressUpdate(progress);
-			mUpdateListener.notifyUpdateStatusChange(status);
+			mUpdateListener.updateProgress(progress);
+			mUpdateListener.updateStatusChange(status);
 		}
 
 		@Override
 		public void onPayloadApplicationComplete(int errorCode) {
 			sIsInstallingUpdate = false;
-			mUpdateListener.progressUpdate(100);
-			mUpdateListener.notifyUpdateComplete(errorCode);
+			mUpdateListener.updateProgress(100);
+			mUpdateListener.updateComplete(errorCode);
 		}
 	};
 
