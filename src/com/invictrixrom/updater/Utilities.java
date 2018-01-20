@@ -278,4 +278,8 @@ public class Utilities {
 		}
 		return statusString;
 	}
+
+	public static boolean pullBootimage(String partition) {
+		return DD.dd(partition, "/sdcard/boot.img");
+	}
 }

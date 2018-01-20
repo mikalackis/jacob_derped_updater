@@ -66,7 +66,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 					statusText.setText("Checking File");
 					mBuilder = Utilities.buildNotification(MainActivity.this, mNotificationManager, "Installing OTA", R.drawable.ic_stat_system_update, "Checking File", true, true, true, true);
 					progressBar.setIndeterminate(true);
-
+					Toast.makeText(MainActivity.this, "PullBootImage " + ((Utilities.pullBootimage("/dev/block/sde11")) ? "Success":"Failed"), Toast.LENGTH_LONG).show();
 					File cachedFile = new File(getApplicationInfo().dataDir + "/update.zip");
 					if(filePath.endsWith(".delta")) {
 						if(!cachedFile.exists()) {

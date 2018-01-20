@@ -12,11 +12,12 @@ LOCAL_RESOURCE_DIR := \
 LOCAL_AAPT_FLAGS := \
     --auto-add-overlay
 
+LOCAL_PROGUARD_ENABLED := disabled
 LOCAL_PACKAGE_NAME := Updater
-LOCAL_PRIVILEGED_MODULE := true
-
+LOCAL_CERTIFICATE := platform
 LOCAL_JNI_SHARED_LIBRARIES := libinvupdater libinvdd
 LOCAL_REQUIRED_MODULES := libinvupdater libinvdd
+LOCAL_PRIVILEGED_MODULE := true
 
 include $(BUILD_PACKAGE)
 

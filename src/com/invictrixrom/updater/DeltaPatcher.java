@@ -23,8 +23,7 @@ public class DeltaPatcher {
 
 	private class PatchTask extends AsyncTask<Void, Void, Boolean> {
      		protected Boolean doInBackground(Void... params) {
-			Delta.patch(DeltaPatcher.this.oldUpdate, DeltaPatcher.this.deltaFile, DeltaPatcher.this.outPath);
-			return false;
+			return Delta.patch(DeltaPatcher.this.oldUpdate, DeltaPatcher.this.deltaFile, DeltaPatcher.this.outPath);
      		}
 
 		protected void onPostExecute(Boolean success) {
