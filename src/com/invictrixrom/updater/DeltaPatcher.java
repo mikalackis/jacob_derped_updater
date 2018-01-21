@@ -17,14 +17,14 @@ public class DeltaPatcher {
 		this.callback = callback;
 	}
 
-        public void patchUpdate() {
+	public void patchUpdate() {
 		new PatchTask().execute();
 	}
 
 	private class PatchTask extends AsyncTask<Void, Void, Boolean> {
-     		protected Boolean doInBackground(Void... params) {
+		protected Boolean doInBackground(Void... params) {
 			return Delta.patch(DeltaPatcher.this.oldUpdate, DeltaPatcher.this.deltaFile, DeltaPatcher.this.outPath);
-     		}
+		}
 
 		protected void onPostExecute(Boolean success) {
 			DeltaPatcher.this.callback.deltaDone(success, DeltaPatcher.this.outPath);

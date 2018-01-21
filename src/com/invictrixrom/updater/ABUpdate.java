@@ -33,8 +33,6 @@ import java.util.List;
 
 class ABUpdate {
 
-	private static final String TAG = "ABUpdateInstaller";
-
 	private static boolean sIsInstallingUpdate;
 
 	private static final String PAYLOAD_BIN_PATH = "payload.bin";
@@ -81,7 +79,6 @@ class ABUpdate {
 	private boolean startUpdate() {
 		File file = new File(zipPath);
 		if (!file.exists()) {
-			Log.e(TAG, "The given update doesn't exist");
 			return false;
 		}
 
@@ -92,10 +89,10 @@ class ABUpdate {
 			offset = getZipEntryOffset(zipFile, PAYLOAD_BIN_PATH);
 			ZipEntry payloadPropEntry = zipFile.getEntry(PAYLOAD_PROPERTIES_PATH);
 			try (InputStream is = zipFile.getInputStream(payloadPropEntry);
-				InputStreamReader isr = new InputStreamReader(is);
-				BufferedReader br = new BufferedReader(isr)) {
+				 InputStreamReader isr = new InputStreamReader(is);
+				 BufferedReader br = new BufferedReader(isr)) {
 				List<String> lines = new ArrayList<>();
-				for (String line; (line = br.readLine()) != null;) {
+				for (String line; (line = br.readLine()) != null; ) {
 					lines.add(line);
 				}
 				headerKeyValuePairs = new String[lines.size()];
@@ -103,7 +100,6 @@ class ABUpdate {
 			}
 			zipFile.close();
 		} catch (IOException | IllegalArgumentException e) {
-			Log.e(TAG, "Could not prepare " + file, e);
 			return false;
 		}
 
@@ -117,13 +113,13 @@ class ABUpdate {
 
 	static boolean isABUpdate(ZipFile zipFile) {
 		return zipFile.getEntry(PAYLOAD_BIN_PATH) != null &&
-			zipFile.getEntry(PAYLOAD_PROPERTIES_PATH) != null;
+					   zipFile.getEntry(PAYLOAD_PROPERTIES_PATH) != null;
 	}
 
 	/**
 	 * Get the offset to the compressed data of a file inside the given zip
 	 *
-	 * @param zipFile input zip file
+	 * @param zipFile   input zip file
 	 * @param entryPath full path of the entry
 	 * @return the offset of the compressed, or -1 if not found
 	 * @throws IOException
@@ -148,7 +144,6 @@ class ABUpdate {
 			}
 			offset += entry.getCompressedSize();
 		}
-		Log.e(TAG, "Entry " + entryPath + " not found");
 		throw new IllegalArgumentException("The given entry was not found");
 	}
 }

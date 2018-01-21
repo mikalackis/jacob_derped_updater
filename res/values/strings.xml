@@ -1,4 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Updater</string>
+    <string name="select_zip">Select a Zip or Delta File to Update</string>
+    <string name="checking_file">Checking File</string>
+    <string name="installing_ota">Installing OTA</string>
+    <string name="delta_failed">Delta Failed</string>
+    <string name="delta_error_details">Can not use delta update without an existing zip cached.</string>
+    <string name="patching_cached_build">Patching Cached Build</string>
+    <string name="chosen_zip">Chosen Zip:</string>
+    <string name="installing_magisk">Installing Magisk</string>
+    <string name="magisk_download_failed">Magisk Download Failed</string>
+    <string name="download_failed">Download Failed</string>
+    <string name="magisk_install_finished">Magisk Install Finished</string>
+    <string name="magisk_installed">Magisk Installed</string>
+    <string name="downloading_magisk">Downloading Magisk</string>
+    <string name="caching_build">Caching Build</string>
+    <string name="update_failed">Update Failed</string>
+    <string name="not_ab_update">Not an A/B Update</string>
+    <string name="zip_open_failed">Zip Open Failed</string>
+    <string name="update_success">Update Success</string>
+    <string name="patching_failed">Patching Failed</string>
+    <string name="finished_patching">Finished Patching</string>
+    <string name="error">Error</string>
+    <string name="pulling_boot">Pulling Boot Image</string>
+    <string name="idle">Idle</string>
+    <string name="checking_for_update">Checking For Update</string>
+    <string name="update_available">Update Available</string>
+    <string name="downloading">Downloading</string>
+    <string name="verifying">Verifying</string>
+    <string name="finalizing">Finalizing</string>
+    <string name="updated_needs_reboot">Updated, Needs Reboot</string>
+    <string name="attempting_rollback">Attempting Rollback</string>
+    <string name="disabled">Disabled</string>
+    <string name="update_error">Update Error</string>
+    <string name="filesystem_error">Filesystem Error</string>
+    <string name="post_install_error">Post Install Error</string>
+    <string name="payload_mismatched">Payload Mismatch</string>
+    <string name="install_device_already_open">Install Device Already Open</string>
+    <string name="kernel_device_already_open">Kernel Device Already Open</string>
+    <string name="download_transfer_error">Download Transfer Error</string>
+    <string name="payload_hash_error">Payload Hash Error</string>
+    <string name="payload_size_mismatch_error">Payload Size Mismatch Error</string>
+    <string name="download_payload_verification_error">Download Payload Verification Error</string>
+    <string name="extracting_magisk">Extracting Magisk</string>
+    <string name="modifying_boot_image">Modifying Boot Image</string>
+    <string name="signing_boot_image">Signing Boot Image</string>
+    <string name="installing_boot_image">Installing Boot Image</string>
+
+
+    <string name="boot_block_name" translatable="false">/dev/block/bootdevice/by-name/boot</string>
+    <string name="slot_prop" translatable="false">ro.boot.slot_suffix</string>
+    <string name="persist_magisk_key" translatable="false">persist_magisk</string>
 </resources>
+

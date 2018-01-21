@@ -2,8 +2,12 @@ package com.invictrixrom.updater;
 
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
+
 import java.io.BufferedInputStream;
+
 import android.content.Context;
+import android.os.Environment;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -35,84 +39,17 @@ public class MagiskInstaller {
 	}
 
 	public void startDownload() {
-		new MagiskTask(callback).execute();
+		new MagiskDownloadTask(callback).execute();
 	}
 
-	public String extractMagisk(String magiskPath) {
-		try {
-			File outDir = new File(new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout");
-			outDir.mkdir();
-			File outFile = new File(outDir.getAbsolutePath() + "/magiskboot");
-			FileOutputStream magiskOut = new FileOutputStream(outFile);
-			Utilities.extractFromZip(magiskPath, Utilities.getMagiskArch() + "/magiskboot", magiskOut);
-
-			outFile = new File(outDir.getAbsolutePath() + "/magiskinit");
-			magiskOut = new FileOutputStream(outFile);
-			Utilities.extractFromZip(magiskPath, Utilities.getMagiskArch() + "/magiskinit", magiskOut);
-
-			outFile = new File(outDir.getAbsolutePath() + "/boot_patch.sh");
-			magiskOut = new FileOutputStream(outFile);
-			Utilities.extractFromZip(magiskPath, "common/boot_patch.sh", magiskOut);
-
-			outFile = new File(outDir.getAbsolutePath() + "/magisk.apk");
-			magiskOut = new FileOutputStream(outFile);
-			Utilities.extractFromZip(magiskPath, "common/magisk.apk", magiskOut);
-
-			outFile = new File(outDir.getAbsolutePath() + "/util_functions.sh");
-			magiskOut = new FileOutputStream(outFile);
-			Utilities.extractFromZip(magiskPath, "common/util_functions.sh", magiskOut);
-
-			outFile = new File(outDir.getAbsolutePath() + "/update-binary");
-			magiskOut = new FileOutputStream(outFile);
-			Utilities.extractFromZip(magiskPath, "META-INF/com/google/android/update-binary", magiskOut);
-
-			return outDir.getAbsolutePath();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		return null;
+	public void installMagisk(String magiskPath, boolean postInstall) {
+		new MagiskInstallTask(this.callback, postInstall).execute(magiskPath);
 	}
 
-	public void installMagisk(String magiskPath) {
-		Shell.runCommand("chmod 755 " + magiskPath + "/*");
-		Shell.runCommand("cp " + bootImagePath + " " + magiskPath + "/boot.img");
-		Shell.runCommand("cd " + magiskPath);
-
-		boolean highcomp = false;
-
-		boolean isSigned = false;
-		try (InputStream in = new FileInputStream(new File(magiskPath + "/boot.img"))) {
-			isSigned = SignBoot.verifySignature(in, null);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		Shell.runCommand("KEEPFORCEENCRYPT=false KEEPVERITY=false HIGHCOMP=" + highcomp  + " sh " + magiskPath + "/update-binary indep " + magiskPath + "/boot_patch.sh " + bootImagePath);
-
-		if(isSigned) {
-			File signed = new File(magiskPath + "/signed.img");
-			AssetManager assets = context.getAssets();
-			try (
-				InputStream in = new FileInputStream(magiskPath + "/new-boot.img");
-				OutputStream out = new BufferedOutputStream(new FileOutputStream(signed));
-				InputStream keyIn = assets.open("private.key.pk8");
-				InputStream certIn = assets.open("public.certificate.x509.pem")
-			) {
-				SignBoot.doSignature("/boot", in, out, keyIn, certIn);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-			Shell.runCommand("mv -f signed.img " + bootImagePath);
-		} else {
-			Shell.runCommand("mv -f new-boot.img " + bootImagePath);
-		}
-		Shell.closeShell();
-	}
-
-	private class MagiskTask extends AsyncTask<Void, Integer, String> {
+	private class MagiskDownloadTask extends AsyncTask<Void, Integer, String> {
 		private MagiskCallback callback;
 
-		public MagiskTask(MagiskCallback callback) {
+		public MagiskDownloadTask(MagiskCallback callback) {
 			this.callback = callback;
 		}
 
@@ -161,6 +98,129 @@ public class MagiskInstaller {
 		@Override
 		protected void onPostExecute(String outputFile) {
 			callback.magiskDownloaded((new File(outputFile).exists()), outputFile);
+		}
+
+	}
+
+	private class MagiskInstallTask extends AsyncTask<String, Integer, Boolean> {
+		private MagiskCallback callback;
+		private boolean postInstall;
+
+		public MagiskInstallTask(MagiskCallback callback, boolean postInstall) {
+			this.callback = callback;
+			this.postInstall = postInstall;
+		}
+
+		private void extractMagisk(String magiskPath) {
+			try {
+				File outDir = new File(new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout");
+				outDir.mkdir();
+				File outFile = new File(outDir.getAbsolutePath() + "/magiskboot");
+				FileOutputStream magiskOut = new FileOutputStream(outFile);
+				Utilities.extractFromZip(magiskPath, Utilities.getMagiskArch() + "/magiskboot", magiskOut);
+
+				outFile = new File(outDir.getAbsolutePath() + "/magiskinit");
+				magiskOut = new FileOutputStream(outFile);
+				Utilities.extractFromZip(magiskPath, Utilities.getMagiskArch() + "/magiskinit", magiskOut);
+
+				outFile = new File(outDir.getAbsolutePath() + "/boot_patch.sh");
+				magiskOut = new FileOutputStream(outFile);
+				Utilities.extractFromZip(magiskPath, "common/boot_patch.sh", magiskOut);
+
+				outFile = new File(outDir.getAbsolutePath() + "/magisk.apk");
+				magiskOut = new FileOutputStream(outFile);
+				Utilities.extractFromZip(magiskPath, "common/magisk.apk", magiskOut);
+
+				outFile = new File(outDir.getAbsolutePath() + "/util_functions.sh");
+				magiskOut = new FileOutputStream(outFile);
+				Utilities.extractFromZip(magiskPath, "common/util_functions.sh", magiskOut);
+
+				outFile = new File(outDir.getAbsolutePath() + "/update-binary");
+				magiskOut = new FileOutputStream(outFile);
+				Utilities.extractFromZip(magiskPath, "META-INF/com/google/android/update-binary", magiskOut);
+
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+
+		private void modBootImage(String magiskPath) {
+			Shell.runCommand("chmod 755 " + magiskPath + "/*");
+			Shell.runCommand("cp " + bootImagePath + " " + magiskPath + "/boot.img");
+			Shell.runCommand("cd " + magiskPath);
+
+			boolean highcomp = false;
+
+			Shell.runCommand("KEEPFORCEENCRYPT=false KEEPVERITY=false HIGHCOMP=" + highcomp + " sh " + magiskPath + "/update-binary indep " + magiskPath + "/boot_patch.sh " + bootImagePath);
+		}
+
+		private void signBootImage(String magiskPath) {
+			File signed = new File(magiskPath + "/signed.img");
+			AssetManager assets = context.getAssets();
+			try (
+						InputStream in = new FileInputStream(magiskPath + "/new-boot.img");
+						OutputStream out = new BufferedOutputStream(new FileOutputStream(signed));
+						InputStream keyIn = assets.open("private.key.pk8");
+						InputStream certIn = assets.open("public.certificate.x509.pem")
+			) {
+				SignBoot.doSignature("/boot", in, out, keyIn, certIn);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+
+		private void flashBoot() {
+			String currentSlot = Utilities.getSystemProperty(context.getString(R.string.slot_prop));
+			if (postInstall) {
+				if (currentSlot.equals("_b")) {
+					currentSlot = "_a";
+				} else {
+					currentSlot = "_b";
+				}
+			}
+			Utilities.pullBootimage(Environment.getExternalStorageDirectory() + "/boot.img", context.getString(R.string.boot_block_name) + currentSlot);
+		}
+
+		@Override
+		protected Boolean doInBackground(String... params) {
+			String magiskPath = params[0];
+
+			publishProgress(R.string.extracting_magisk);
+			extractMagisk(magiskPath);
+
+			publishProgress(R.string.modifying_boot_image);
+			modBootImage(magiskPath);
+
+			boolean isSigned = false;
+			try (InputStream in = new FileInputStream(new File(magiskPath + "/boot.img"))) {
+				isSigned = SignBoot.verifySignature(in, null);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			if (isSigned) {
+				publishProgress(R.string.signing_boot_image);
+				signBootImage(magiskPath);
+
+				Shell.runCommand("mv -f signed.img " + bootImagePath);
+			} else {
+				Shell.runCommand("mv -f new-boot.img " + bootImagePath);
+			}
+			Shell.closeShell();
+
+			publishProgress(R.string.installing_boot_image);
+			flashBoot();
+			return true;
+		}
+
+		@Override
+		protected void onProgressUpdate(Integer... status) {
+			callback.magiskInstallStatusUpdate(status[0]);
+		}
+
+		@Override
+		protected void onPostExecute(Boolean success) {
+			callback.magiskInstallComplete(success);
 		}
 
 	}

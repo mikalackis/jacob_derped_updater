@@ -11,6 +11,7 @@ import android.provider.MediaStore;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.UpdateEngine;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.zip.ZipEntry;
@@ -33,20 +34,20 @@ public class Utilities {
 		mChannel.setDescription(channel_description);
 		mChannel.enableLights(true);
 		mNotificationManager.createNotificationChannel(mChannel);
-	}		
+	}
 
 	public static Notification.Builder buildNotification(Context context, NotificationManager mNotificationManager, String title, int iconRes, String text, boolean progress, boolean progressIndeterminate, boolean alertOnce, boolean ongoing) {
 
 		Notification.Builder mBuilder;
 
 		mBuilder = new Notification.Builder(context, channel_id)
-				.setSmallIcon(iconRes)
-				.setContentTitle(title)
-				.setContentText(text)
-				.setOngoing(ongoing)
-				.setOnlyAlertOnce(true);
+						   .setSmallIcon(iconRes)
+						   .setContentTitle(title)
+						   .setContentText(text)
+						   .setOngoing(ongoing)
+						   .setOnlyAlertOnce(true);
 
-		if(progress) {
+		if (progress) {
 			mBuilder = mBuilder.setProgress(100, 0, progressIndeterminate);
 		}
 
@@ -70,13 +71,21 @@ public class Utilities {
 		return mBuilder;
 	}
 
-	public static Notification.Builder finishNotification(NotificationManager mNotificationManager, Notification.Builder mBuilder, String title, String status, boolean error, int errorIconRes, int successIconRes, boolean progressFinished) {
-		mBuilder = mBuilder.setSmallIcon(error ? errorIconRes:successIconRes)
-				.setContentText(status)
-				.setContentTitle(title)
-				.setOngoing(false);
+	public static Notification.Builder updateNotificationTitle(NotificationManager mNotificationManager, Notification.Builder mBuilder, String title) {
+		mBuilder = mBuilder.setContentTitle(title);
 
-		if(progressFinished) {
+		mNotificationManager.notify(notification_id, mBuilder.build());
+
+		return mBuilder;
+	}
+
+	public static Notification.Builder finishNotification(NotificationManager mNotificationManager, Notification.Builder mBuilder, String title, String status, boolean error, int errorIconRes, int successIconRes, boolean progressFinished) {
+		mBuilder = mBuilder.setSmallIcon(error ? errorIconRes : successIconRes)
+						   .setContentText(status)
+						   .setContentTitle(title)
+						   .setOngoing(false);
+
+		if (progressFinished) {
 			mBuilder = mBuilder.setProgress(0, 0, false);
 		}
 
@@ -86,7 +95,7 @@ public class Utilities {
 	}
 
 	public static boolean copyFile(File src, File dst) {
-		if(src.getAbsolutePath().toString().equals(dst.getAbsolutePath().toString())) {
+		if (src.getAbsolutePath().equals(dst.getAbsolutePath())) {
 			return true;
 		} else {
 			try {
@@ -94,12 +103,12 @@ public class Utilities {
 				OutputStream os = new FileOutputStream(dst);
 				byte[] buff = new byte[1024];
 				int len;
-				while((len = is.read(buff)) > 0) {
+				while ((len = is.read(buff)) > 0) {
 					os.write(buff, 0, len);
 				}
 				is.close();
 				os.close();
-			} catch(Exception ex) {
+			} catch (Exception ex) {
 				ex.printStackTrace();
 				return false;
 			}
@@ -136,7 +145,7 @@ public class Utilities {
 				}
 
 				final String selection = "_id=?";
-				final String[] selectionArgs = new String[] { split[1] };
+				final String[] selectionArgs = new String[]{split[1]};
 
 				return getDataColumn(context, contentUri, selection, selectionArgs);
 			}
@@ -153,7 +162,7 @@ public class Utilities {
 
 		Cursor cursor = null;
 		final String column = "_data";
-		final String[] projection = { column };
+		final String[] projection = {column};
 
 		try {
 			cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs, null);
@@ -181,102 +190,102 @@ public class Utilities {
 		return "com.android.providers.media.documents".equals(uri.getAuthority());
 	}
 
-	public static String getUpdaterStatus(int status) {
-		String statusString = "";
+	public static int getUpdaterStatus(int status) {
+		int statusString = 0;
 		switch (status) {
 			case UpdateEngine.UpdateStatusConstants.IDLE: {
-				statusString = "Idle";
+				statusString = R.string.idle;
 			}
-				break;
+			break;
 			case UpdateEngine.UpdateStatusConstants.CHECKING_FOR_UPDATE: {
-				statusString = "Checking For Update";
+				statusString = R.string.checking_for_update;
 			}
-				break;
+			break;
 			case UpdateEngine.UpdateStatusConstants.UPDATE_AVAILABLE: {
-				statusString = "Update Available";
+				statusString = R.string.update_available;
 			}
-				break;
+			break;
 			case UpdateEngine.UpdateStatusConstants.DOWNLOADING: {
-				statusString = "Downloading";
+				statusString = R.string.downloading;
 			}
-				break;
+			break;
 			case UpdateEngine.UpdateStatusConstants.VERIFYING: {
-				statusString = "Verifying";
+				statusString = R.string.verifying;
 			}
-				break;
+			break;
 			case UpdateEngine.UpdateStatusConstants.FINALIZING: {
-				statusString = "Finalizing";
+				statusString = R.string.finalizing;
 			}
-				break;
+			break;
 			case UpdateEngine.UpdateStatusConstants.UPDATED_NEED_REBOOT: {
-				statusString = "Updated. Needs Reboot";
+				statusString = R.string.updated_needs_reboot;
 			}
-				break;
+			break;
 			case UpdateEngine.UpdateStatusConstants.REPORTING_ERROR_EVENT: {
-				statusString = "Error";
+				statusString = R.string.error;
 			}
-				break;
+			break;
 			case UpdateEngine.UpdateStatusConstants.ATTEMPTING_ROLLBACK: {
-				statusString = "Attempting Rollback";
+				statusString = R.string.attempting_rollback;
 			}
-				break;
+			break;
 			case UpdateEngine.UpdateStatusConstants.DISABLED: {
-				statusString = "Disabled";
+				statusString = R.string.disabled;
 			}
-				break;
+			break;
 			default:
 				break;
 		}
 		return statusString;
 	}
 
-	public static String getUpdaterCompleteStatus(int status) {
-		String statusString = "";
+	public static int getUpdaterCompleteStatus(int status) {
+		int statusString = 0;
 		switch (status) {
 			case UpdateEngine.ErrorCodeConstants.SUCCESS: {
-				statusString = "Update Success";
+				statusString = R.string.update_success;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.ERROR: {
-				statusString = "Update Error";
+				statusString = R.string.update_error;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.FILESYSTEM_COPIER_ERROR: {
-				statusString = "Filesystem Error";
+				statusString = R.string.filesystem_error;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.POST_INSTALL_RUNNER_ERROR: {
-				statusString = "Post Install Error";
+				statusString = R.string.post_install_error;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.PAYLOAD_MISMATCHED_TYPE_ERROR: {
-				statusString = "Payload Mismatched Type";
+				statusString = R.string.payload_mismatched;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.INSTALL_DEVICE_OPEN_ERROR: {
-				statusString = "Install Device Already Open";
+				statusString = R.string.install_device_already_open;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.KERNEL_DEVICE_OPEN_ERROR: {
-				statusString = "Kernel Device Already Open";
+				statusString = R.string.kernel_device_already_open;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.DOWNLOAD_TRANSFER_ERROR: {
-				statusString = "Download Transfer Error";
+				statusString = R.string.download_transfer_error;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.PAYLOAD_HASH_MISMATCH_ERROR: {
-				statusString = "Payload Hash Error";
+				statusString = R.string.payload_hash_error;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.PAYLOAD_SIZE_MISMATCH_ERROR: {
-				statusString = "Payload Size Mismatch Error";
+				statusString = R.string.payload_size_mismatch_error;
 			}
-				break;
+			break;
 			case UpdateEngine.ErrorCodeConstants.DOWNLOAD_PAYLOAD_VERIFICATION_ERROR: {
-				statusString = "Download Payload Verification Error";
+				statusString = R.string.download_payload_verification_error;
 			}
-				break;
+			break;
 			default:
 				break;
 		}
@@ -311,9 +320,9 @@ public class Utilities {
 	public static String getMagiskArch() {
 		String cpuAbi = getSystemProperty("ro.product.cpu.abi");
 		String arch = "arm";
-		if(cpuAbi.contains("arm64-v8a")) arch = "arm64";
-		else if(cpuAbi.contains("x86_64")) arch = "x64";
-		else if(cpuAbi.contains("x86")) arch = "x86";
+		if (cpuAbi.contains("arm64-v8a")) arch = "arm64";
+		else if (cpuAbi.contains("x86_64")) arch = "x64";
+		else if (cpuAbi.contains("x86")) arch = "x86";
 		return arch;
 	}
 
