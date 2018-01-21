@@ -51,6 +51,6 @@ jboolean dd(char* input, char* output) {
 		if (outputFile >= 0)
 			close(outputFile);
 
-		return JNI_FALSE;
+	return JNI_FALSE;
 
 }

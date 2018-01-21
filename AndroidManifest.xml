@@ -16,6 +16,7 @@
         android:allowBackup="false"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
+	android:process="com.invictrixrom.updater"
         android:theme="@style/AppTheme"
         android:supportsRtl="true">
 

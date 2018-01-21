@@ -5,8 +5,12 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.MenuInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -16,14 +20,17 @@ import android.os.UpdateEngine;
 import java.io.File;
 import java.util.zip.ZipFile;
 
-public class MainActivity extends Activity implements UpdaterListener, DeltaCallback {
+public class MainActivity extends Activity implements UpdaterListener, DeltaCallback, MagiskCallback {
 
 	private TextView statusText;
 	private Button installButton, chooseButton;
 	private ProgressBar progressBar;
 
+	private boolean alreadyInstalled = false, doPersistMagisk = false;
+
 	private String filePath = "";
 
+	private MagiskInstaller magiskInstaller;
 	private NotificationManager mNotificationManager;
 	private Notification.Builder mBuilder;
 
@@ -65,14 +72,16 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 				if(!filePath.isEmpty()) {
 					statusText.setText("Checking File");
 					mBuilder = Utilities.buildNotification(MainActivity.this, mNotificationManager, "Installing OTA", R.drawable.ic_stat_system_update, "Checking File", true, true, true, true);
+					disableButtons(true);
 					progressBar.setIndeterminate(true);
-					Toast.makeText(MainActivity.this, "PullBootImage " + ((Utilities.pullBootimage("/dev/block/sde11")) ? "Success":"Failed"), Toast.LENGTH_LONG).show();
 					File cachedFile = new File(getApplicationInfo().dataDir + "/update.zip");
 					if(filePath.endsWith(".delta")) {
 						if(!cachedFile.exists()) {
 							progressBar.setIndeterminate(false);
 							progressBar.setMax(100);
 							mBuilder = Utilities.finishNotification(mNotificationManager, mBuilder, "Delta Failed", "Can't use delta update without an existing zip cached.", true, R.drawable.ic_stat_error, R.drawable.ic_stat_success, true);
+							disableButtons(false);
+
 							statusText.setText("Can't use delta update without an existing zip cached, update with a full zip first");
 						} else {
 							DeltaPatcher patcher = new DeltaPatcher(cachedFile.getAbsolutePath(), filePath, cachedFile.getAbsolutePath() + "2");
@@ -89,6 +98,44 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 	}
 
 	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.options_menu, menu);
+		MenuItem persistMagisk = menu.findItem(R.id.persist_magisk);
+		persistMagisk.setChecked(shouldPersist());
+		return true;
+	}
+
+	private void savePersist(boolean persist) {
+		SharedPreferences prefs = this.getSharedPreferences("com.invictrixrom.updater", Context.MODE_PRIVATE);
+		prefs.edit().putBoolean("persist_magisk", persist).commit();
+	}
+
+	private boolean shouldPersist() {
+		SharedPreferences prefs = this.getSharedPreferences("com.invictrixrom.updater", Context.MODE_PRIVATE);
+		return prefs.getBoolean("persist_magisk", false);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.persist_magisk:
+				doPersistMagisk = true;
+				if (item.isChecked())
+					item.setChecked(false);
+				else
+					item.setChecked(true);
+				savePersist(item.isChecked());
+				return true;
+			case R.id.install_magisk:
+				installMagisk();
+				return true;
+			default:
+				return super.onOptionsItemSelected(item);
+		}
+	}
+
+	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
 			case 0:
@@ -100,6 +147,46 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 				break;
 		}
 		super.onActivityResult(requestCode, resultCode, data);
+	}
+
+	@Override
+	public void magiskDownloaded(boolean success, String magiskPath) {
+		if(success) {
+			mBuilder = Utilities.updateNotificationProgress(mNotificationManager, mBuilder, 100, true);
+			mBuilder = Utilities.updateNotificationText(mNotificationManager, mBuilder, "Installing Magisk");
+			progressBar.setIndeterminate(true);
+			statusText.setText("Installing Magisk");
+			magiskInstaller.installMagisk(magiskInstaller.extractMagisk(magiskPath));
+			String currentSlot = Utilities.getSystemProperty("ro.boot.slot_suffix");
+			if(alreadyInstalled) {
+				if(currentSlot == "_b") {
+					currentSlot = "_a";
+				} else {
+					currentSlot = "_b";
+				}
+			}
+			Utilities.pullBootimage("/sdcard/boot.img", "/dev/block/bootdevice/by-name/boot" + currentSlot);
+			magiskInstallFinished();
+		} else {
+			mBuilder = Utilities.finishNotification(mNotificationManager, mBuilder, "Magisk Download Failed", "Download Failed.", true, R.drawable.ic_stat_error, R.drawable.ic_stat_success, true);
+		}
+		Shell.runCommand("rm -rf " + magiskPath);
+	}
+
+	@Override
+        public void magiskDownloadProgress(int progress) {
+		progressBar.setIndeterminate(false);
+		progressBar.setMax(100);
+		progressBar.setProgress(progress);
+		mBuilder = Utilities.updateNotificationProgress(mNotificationManager, mBuilder, progress, false);
+	}
+
+        public void magiskInstallFinished() {
+		mBuilder = Utilities.finishNotification(mNotificationManager, mBuilder, "Magisk Install Finished", "Magisk Installed.", false, R.drawable.ic_stat_error, R.drawable.ic_stat_success, true);
+		progressBar.setIndeterminate(false);
+		progressBar.setMax(100);
+		progressBar.setProgress(100);
+		statusText.setText("Installed Magisk");
 	}
 
 	private void startUpdate(String updateFile) {
@@ -117,10 +204,13 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 				progressBar.setIndeterminate(false);
 				progressBar.setMax(100);
 				mBuilder = Utilities.finishNotification(mNotificationManager, mBuilder, "Update Failed", "Not an A/B Update.", true, R.drawable.ic_stat_error, R.drawable.ic_stat_success, true);
+				disableButtons(false);
+
 				statusText.setText("Not an A/B Update");
 			}
 		} catch (Exception ex) {
 			mBuilder = Utilities.finishNotification(mNotificationManager, mBuilder, "Update Failed", "Zip Open Error", true, R.drawable.ic_stat_error, R.drawable.ic_stat_success, true);
+			disableButtons(false);
 			statusText.setText("Could not open zip file.");
 		}
 	}
@@ -150,6 +240,34 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 		statusText.setText(statusString);
 		progressBar.setProgress(100);
 		mBuilder = Utilities.finishNotification(mNotificationManager, mBuilder, isError ? "Update Failed":"Update Success", statusString, isError, R.drawable.ic_stat_error, R.drawable.ic_stat_success, true);
+		disableButtons(false);
+		if(!isError) alreadyInstalled = true;
+		if(!isError && shouldPersist()) installMagisk();
+	}
+
+	private void installMagisk() {
+		disableButtons(true);
+		statusText.setText("Downloading Magisk");
+		progressBar.setIndeterminate(true);
+		String currentSlot = Utilities.getSystemProperty("ro.boot.slot_suffix");
+		if(alreadyInstalled) {
+			if(currentSlot == "_b") {
+				currentSlot = "_a";
+			} else {
+				currentSlot = "_b";
+			}
+			mBuilder = Utilities.updateNotificationText(mNotificationManager, mBuilder, "Downloading Magisk");
+			mBuilder = Utilities.updateNotificationProgress(mNotificationManager, mBuilder, 100, false);
+		} else {
+			mBuilder = Utilities.buildNotification(MainActivity.this, mNotificationManager, "Installing Magisk", R.drawable.ic_stat_system_update, "Downloading Magisk", true, true, true, true);
+		}
+		progressBar.setIndeterminate(false);
+		progressBar.setMax(100);
+		Utilities.pullBootimage("/dev/block/bootdevice/by-name/boot" + currentSlot, "/sdcard/boot.img");
+		magiskInstaller = new MagiskInstaller(MainActivity.this);
+		magiskInstaller.setBootImagePath("/sdcard/boot.img");
+		magiskInstaller.setCallback(MainActivity.this);
+		magiskInstaller.startDownload();
 	}
 
 	@Override
@@ -159,11 +277,16 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 			startUpdate(resultPath);
 		} else {
 			mBuilder = Utilities.finishNotification(mNotificationManager, mBuilder, "Patching Failed", "Error", true, R.drawable.ic_stat_error, R.drawable.ic_stat_success, true);
+			disableButtons(false);
 		}
 		File resultFile = new File(resultPath);
 		File cachedFile = new File(getApplicationInfo().dataDir + "/update.zip");
-		cachedFile.delete();
+		Shell.runCommand("rm -f " + resultPath);
 		Utilities.copyFile(resultFile, cachedFile);
 	}
 
+	private void disableButtons(boolean disable) {
+		chooseButton.setEnabled(disable);
+		installButton.setEnabled(disable);
+	}
 }

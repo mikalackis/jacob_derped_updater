@@ -11,6 +11,10 @@ import android.provider.MediaStore;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.UpdateEngine;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -279,7 +283,60 @@ public class Utilities {
 		return statusString;
 	}
 
-	public static boolean pullBootimage(String partition) {
-		return DD.dd(partition, "/sdcard/boot.img");
+	public static boolean pullBootimage(String partition, String output) {
+		return DD.dd(partition, output);
+	}
+
+	public static boolean extractFromZip(String zipFile, String zipPath, FileOutputStream outputStream) {
+		try {
+			ZipInputStream magiskZip = new ZipInputStream(new FileInputStream(zipFile));
+			ZipEntry zipEntry = null;
+			while ((zipEntry = magiskZip.getNextEntry()) != null) {
+				if (zipEntry.getName().equals(zipPath)) {
+					byte[] buffer = new byte[9000];
+					int len;
+					while ((len = magiskZip.read(buffer)) != -1) {
+						outputStream.write(buffer, 0, len);
+					}
+					outputStream.close();
+					return true;
+				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return false;
+	}
+
+	public static String getMagiskArch() {
+		String cpuAbi = getSystemProperty("ro.product.cpu.abi");
+		String arch = "arm";
+		if(cpuAbi.contains("arm64-v8a")) arch = "arm64";
+		else if(cpuAbi.contains("x86_64")) arch = "x64";
+		else if(cpuAbi.contains("x86")) arch = "x86";
+		return arch;
+	}
+
+	public static String getSystemProperty(String propName) {
+		String line;
+		BufferedReader input = null;
+		try {
+			Process p = Runtime.getRuntime().exec("getprop " + propName);
+			input = new BufferedReader(new InputStreamReader(p.getInputStream()), 1024);
+			line = input.readLine();
+			input.close();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		} finally {
+			if (input != null) {
+				try {
+					input.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return line;
 	}
 }
