@@ -266,7 +266,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 		}
 		File resultFile = new File(resultPath);
 		File cachedFile = new File(getApplicationInfo().dataDir + "/update.zip");
-		Shell.runCommand("rm -f " + resultPath);
+		resultFile.delete();
 		Utilities.copyFile(resultFile, cachedFile);
 	}
 
