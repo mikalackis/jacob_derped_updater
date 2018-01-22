@@ -189,7 +189,7 @@ public class MagiskInstaller {
 			extractMagisk(magiskPath);
 
 			publishProgress(R.string.modifying_boot_image);
-			modBootImage(magiskPath);
+			modBootImage(new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout");
 
 			boolean isSigned = false;
 			try (InputStream in = new FileInputStream(new File(magiskPath + "/boot.img"))) {

@@ -172,7 +172,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 
 	@Override
 	public void magiskInstallComplete(boolean success) {
-		finishTask((success ? R.string.magisk_install_finished : R.string.magisk_download_failed), (success ? R.string.magisk_installed : R.string.error), success);
+		finishTask((success ? R.string.magisk_install_finished : R.string.magisk_download_failed), (success ? R.string.magisk_installed : R.string.error), !success);
 		updateStatusProgress(100, 0, false);
 	}
 
@@ -224,11 +224,14 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 		updateStatusProgress(100, 100, false);
 		finishTask((isError ? R.string.update_failed : R.string.update_success), statusString, isError);
 		if (!isError) postInstall = true;
-		if (!isError && shouldPersistMagisk()) installMagisk();
+		if (!isError && doPersistMagisk) installMagisk();
 	}
 
 	private void installMagisk() {
 		disableButtons(true);
+		if (!postInstall) {
+			mBuilder = Utilities.buildNotification(MainActivity.this, mNotificationManager, getString(R.string.installing_magisk), R.drawable.ic_stat_system_update, getString(R.string.downloading_magisk), true, true, true, true);
+		}
 		updateStatusTitle(R.string.installing_magisk);
 		updateStatusText(R.string.downloading_magisk);
 		updateStatusProgress(100, 0, true);
@@ -240,8 +243,6 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 			} else {
 				currentSlot = "_b";
 			}
-		} else {
-			mBuilder = Utilities.buildNotification(MainActivity.this, mNotificationManager, getString(R.string.installing_magisk), R.drawable.ic_stat_system_update, getString(R.string.downloading_magisk), true, true, true, true);
 		}
 		updateStatusProgress(100, 0, true);
 		updateStatusText(R.string.pulling_boot);
@@ -257,7 +258,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 	@Override
 	public void deltaDone(boolean success, String resultPath) {
 		if (success) {
-			updateStatusChange(R.string.finished_patching);
+			updateStatusText(R.string.finished_patching);
 			startUpdate(resultPath);
 		} else {
 			finishTask(R.string.patching_failed, R.string.error, true);
