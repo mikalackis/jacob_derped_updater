@@ -77,10 +77,15 @@ public class MagiskInstaller {
 
 				byte data[] = new byte[1024];
 				long total = 0;
+				int prevProgress = -1;
 				while ((count = input.read(data)) != -1) {
 					total += count;
 					output.write(data, 0, count);
-					publishProgress((int) (((float) total / (float) contentLength) * 100));
+					int progress = ((int) (((float) total / (float) contentLength) * 100));
+					if(progress > prevProgress) {
+						publishProgress(progress);
+						prevProgress = progress;
+					}
 				}
 
 				output.flush();
