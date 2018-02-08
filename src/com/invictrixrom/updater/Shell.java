@@ -21,6 +21,7 @@ public class Shell {
 
 	public static void closeShell() {
 		if (shell != null) shell.close();
+		shell = null;
 	}
 
 	private static class ShellImpl {
