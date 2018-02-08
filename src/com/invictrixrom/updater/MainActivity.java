@@ -154,11 +154,11 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 	}
 
 	@Override
-	public void magiskDownloaded(boolean success, String magiskPath) {
+	public void magiskDownloaded(boolean success) {
 		if (success) {
 			updateStatusProgress(100, 0, true);
 			updateStatusText(R.string.installing_magisk);
-			magiskInstaller.installMagisk(magiskPath, postInstall);
+			magiskInstaller.installMagisk(postInstall);
 		} else {
 			finishTask(R.string.magisk_download_failed, R.string.download_failed, true);
 		}
@@ -170,8 +170,9 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 	}
 
 	@Override
-	public void magiskInstallComplete(boolean success) {
-		finishTask((success ? R.string.magisk_install_finished : R.string.magisk_download_failed), (success ? R.string.magisk_installed : R.string.error), !success);
+	public void magiskInstallComplete(MagiskInstaller.MagiskInstallCodes statusCode) {
+		boolean success = statusCode == MagiskInstaller.MagiskInstallCodes.SUCCESS;
+		finishTask((success ? R.string.magisk_install_finished : R.string.magisk_install_failed), (success ? R.string.magisk_installed : Utilities.getMagiskCode(statusCode)), !success);
 		updateStatusProgress(100, 0, false);
 	}
 
@@ -190,7 +191,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 			zipFile.close();
 			if (isABUpdate) {
 				updateStatusText(R.string.caching_build);
-				Shell.runCommand("mv " + updateFile + " " + cachedFile);
+				Shell.runCommand("mv \"" + updateFile + "\" \"" + cachedFile + "\"");
 				ABUpdate.start(cachedFile, this);
 			} else {
 				updateStatusProgress(100, 0, false);
@@ -262,7 +263,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 		if (success) {
 			updateStatusText(R.string.finished_patching);
 			String cachedFile = getApplicationInfo().dataDir + "/update.zip";
-			Shell.runCommand("mv " + resultPath + " " + cachedFile);
+			Shell.runCommand("mv \"" + resultPath + "\" \"" + cachedFile + "\"");
 			startUpdate(cachedFile);
 		} else {
 			finishTask(R.string.patching_failed, R.string.error, true);

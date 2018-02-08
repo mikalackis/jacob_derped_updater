@@ -46,7 +46,13 @@
     <string name="modifying_boot_image">Modifying Boot Image</string>
     <string name="signing_boot_image">Signing Boot Image</string>
     <string name="installing_boot_image">Installing Boot Image</string>
-
+    <string name="success">Success</string>
+    <string name="signing_failed">Signing Failed</string>
+    <string name="install_failed">Install Failed</string>
+    <string name="extract_failed">Extract Failed</string>
+    <string name="modifying_failed">Patching Boot Image Failed</string>
+    <string name="boot_image_copy_failed">Copying Boot Image Failed</string>
+    <string name="magisk_install_failed">Magisk Install Failed</string>
 
     <string name="boot_block_name" translatable="false">/dev/block/bootdevice/by-name/boot</string>
     <string name="slot_prop" translatable="false">ro.boot.slot_suffix</string>

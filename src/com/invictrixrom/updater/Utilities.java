@@ -348,4 +348,23 @@ public class Utilities {
 		}
 		return line;
 	}
+
+	public static int getMagiskCode(MagiskInstaller.MagiskInstallCodes magiskCode) {
+		switch(magiskCode) {
+			case SUCCESS:
+				return R.string.success;
+			case EXTRACT_FAILED:
+				return R.string.extract_failed;
+			case BOOT_IMAGE_COPY_FAILED:
+				return R.string.boot_image_copy_failed;
+			case MODIFYING_FAILED:
+				return R.string.modifying_failed;
+			case SIGNING_FAILED:
+				return R.string.signing_failed;
+			case INSTALLING_FAILED:
+				return R.string.install_failed;
+			default:
+				return 0;
+		}
+	}
 }

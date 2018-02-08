@@ -22,6 +22,11 @@ public class MagiskInstaller {
 	private MagiskCallback callback;
 	private String bootImagePath = "";
 	private Context context;
+	private String magiskZipPath = "";
+	private String magiskInstallPath = "";
+	private String magiskStockBootPath = "";
+	private String magiskBootPath = "";
+	private String magiskSignedBootPath = "";
 
 	public void setBootImagePath(String bootImagePath) {
 		this.bootImagePath = bootImagePath;
@@ -39,11 +44,11 @@ public class MagiskInstaller {
 		new MagiskDownloadTask(callback).execute();
 	}
 
-	public void installMagisk(String magiskPath, boolean postInstall) {
-		new MagiskInstallTask(this.callback, postInstall).execute(magiskPath);
+	public void installMagisk(boolean postInstall) {
+		new MagiskInstallTask(this.callback, postInstall).execute();
 	}
 
-	private class MagiskDownloadTask extends AsyncTask<Void, Integer, String> {
+	private class MagiskDownloadTask extends AsyncTask<Void, Integer, Void> {
 		private MagiskCallback callback;
 
 		public MagiskDownloadTask(MagiskCallback callback) {
@@ -51,21 +56,24 @@ public class MagiskInstaller {
 		}
 
 		@Override
-		protected String doInBackground(Void... params) {
+		protected Void doInBackground(Void... params) {
 			int count;
 			try {
-				File magiskDir = new File(context.createDeviceProtectedStorageContext().getFilesDir().getParent() + "/install");
+				magiskInstallPath = context.createDeviceProtectedStorageContext().getFilesDir().getParent() + "/install";
+				File magiskDir = new File(magiskInstallPath);
 				magiskDir.mkdir();
-				String out = magiskDir.getAbsolutePath() + "/magisk.zip";
-				URL url = new URL("https://tiny.cc/latestmagisk");
 
-				URLConnection connection = url.openConnection();
+				magiskZipPath = magiskInstallPath + "/magisk.zip";
+
+				URL latestMagiskUrl = new URL("https://tiny.cc/latestmagisk");
+
+				URLConnection connection = latestMagiskUrl.openConnection();
 				connection.connect();
 
 				long contentLength = connection.getContentLengthLong();
 
-				InputStream input = new BufferedInputStream(url.openStream());
-				OutputStream output = new FileOutputStream(out);
+				InputStream input = new BufferedInputStream(latestMagiskUrl.openStream());
+				OutputStream output = new FileOutputStream(magiskZipPath);
 
 				byte data[] = new byte[1024];
 				long total = 0;
@@ -79,7 +87,6 @@ public class MagiskInstaller {
 				output.close();
 				input.close();
 
-				return out;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -93,13 +100,13 @@ public class MagiskInstaller {
 		}
 
 		@Override
-		protected void onPostExecute(String outputFile) {
-			callback.magiskDownloaded((new File(outputFile).exists()), outputFile);
+		protected void onPostExecute(Void result) {
+			callback.magiskDownloaded((new File(magiskZipPath).exists()));
 		}
 
 	}
 
-	private class MagiskInstallTask extends AsyncTask<String, Integer, Boolean> {
+	private class MagiskInstallTask extends AsyncTask<Void, Integer, Enum> {
 		private MagiskCallback callback;
 		private boolean postInstall;
 
@@ -108,65 +115,79 @@ public class MagiskInstaller {
 			this.postInstall = postInstall;
 		}
 
-		private void extractMagisk(String magiskPath) {
+		private boolean extractMagisk() {
 			try {
-				File outDir = new File(new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout");
-				outDir.mkdir();
-				File outFile = new File(outDir.getAbsolutePath() + "/magiskboot");
+				String magiskArch = Utilities.getMagiskArch();
+
+				File outFile = new File(magiskInstallPath + "/magiskboot");
 				FileOutputStream magiskOut = new FileOutputStream(outFile);
-				Utilities.extractFromZip(magiskPath, Utilities.getMagiskArch() + "/magiskboot", magiskOut);
+				Utilities.extractFromZip(magiskZipPath, magiskArch + "/magiskboot", magiskOut);
 
-				outFile = new File(outDir.getAbsolutePath() + "/magiskinit");
+				outFile = new File(magiskInstallPath + "/magiskinit");
 				magiskOut = new FileOutputStream(outFile);
-				Utilities.extractFromZip(magiskPath, Utilities.getMagiskArch() + "/magiskinit", magiskOut);
+				Utilities.extractFromZip(magiskZipPath, magiskArch + "/magiskinit", magiskOut);
 
-				outFile = new File(outDir.getAbsolutePath() + "/boot_patch.sh");
+				outFile = new File(magiskInstallPath + "/boot_patch.sh");
 				magiskOut = new FileOutputStream(outFile);
-				Utilities.extractFromZip(magiskPath, "common/boot_patch.sh", magiskOut);
+				Utilities.extractFromZip(magiskZipPath, "common/boot_patch.sh", magiskOut);
 
-				outFile = new File(outDir.getAbsolutePath() + "/magisk.apk");
+				outFile = new File(magiskInstallPath + "/magisk.apk");
 				magiskOut = new FileOutputStream(outFile);
-				Utilities.extractFromZip(magiskPath, "common/magisk.apk", magiskOut);
+				Utilities.extractFromZip(magiskZipPath, "common/magisk.apk", magiskOut);
 
-				outFile = new File(outDir.getAbsolutePath() + "/util_functions.sh");
+				outFile = new File(magiskInstallPath + "/util_functions.sh");
 				magiskOut = new FileOutputStream(outFile);
-				Utilities.extractFromZip(magiskPath, "common/util_functions.sh", magiskOut);
+				Utilities.extractFromZip(magiskZipPath, "common/util_functions.sh", magiskOut);
 
-				outFile = new File(outDir.getAbsolutePath() + "/update-binary");
+				outFile = new File(magiskInstallPath + "/update_binary");
 				magiskOut = new FileOutputStream(outFile);
-				Utilities.extractFromZip(magiskPath, "META-INF/com/google/android/update-binary", magiskOut);
+				Utilities.extractFromZip(magiskZipPath, "META-INF/com/google/android/update-binary", magiskOut);
 
 			} catch (Exception ex) {
 				ex.printStackTrace();
+				return false;
 			}
+			return true;
 		}
 
-		private void modBootImage(String magiskPath) {
-			Shell.runCommand("chmod 755 " + magiskPath + "/*");
-			Shell.runCommand("cp " + bootImagePath + " " + magiskPath + "/boot.img");
-			Shell.runCommand("cd " + magiskPath);
+		private MagiskInstallCodes modBootImage() {
+			Shell.runCommand("chmod 755 \"" + magiskInstallPath + "/*\"");
+			magiskStockBootPath = magiskInstallPath + "/boot.img";
+			magiskBootPath = magiskInstallPath + "/new-boot.img";
+			magiskSignedBootPath = magiskInstallPath + "/signed.img";
+
+			Shell.runCommand("cp \"" + bootImagePath + "\" \"" + magiskStockBootPath + "\"");
+			Shell.runCommand("cd \"" + magiskInstallPath + "\"");
+			if(!new File(magiskStockBootPath).exists()) {
+				return MagiskInstallCodes.BOOT_IMAGE_COPY_FAILED;
+			}
 
 			boolean highcomp = false;
 
-			Shell.runCommand("KEEPFORCEENCRYPT=false KEEPVERITY=false HIGHCOMP=" + highcomp + " sh " + magiskPath + "/update-binary indep " + magiskPath + "/boot_patch.sh " + bootImagePath);
+			Shell.runCommand("KEEPFORCEENCRYPT=false KEEPVERITY=false HIGHCOMP=" + highcomp + " sh \"" + magiskInstallPath + "/update-binary\" indep \"" + magiskInstallPath + "/boot_patch.sh\" \"" + magiskStockBootPath + "\"");
+			if(!new File(magiskBootPath).exists()) {
+				return MagiskInstallCodes.MODIFYING_FAILED;
+			}
+			return MagiskInstallCodes.SUCCESS;
 		}
 
-		private void signBootImage(String magiskPath) {
-			File signed = new File(magiskPath + "/signed.img");
+		private boolean signBootImage() {
 			AssetManager assets = context.getAssets();
 			try (
-						InputStream in = new FileInputStream(magiskPath + "/new-boot.img");
-						OutputStream out = new BufferedOutputStream(new FileOutputStream(signed));
-						InputStream keyIn = assets.open("private.key.pk8");
-						InputStream certIn = assets.open("public.certificate.x509.pem")
+				InputStream in = new FileInputStream(magiskBootPath);
+				OutputStream out = new BufferedOutputStream(new FileOutputStream(new File(magiskSignedBootPath)));
+				InputStream keyIn = assets.open("private.key.pk8");
+				InputStream certIn = assets.open("public.certificate.x509.pem")
 			) {
 				SignBoot.doSignature("/boot", in, out, keyIn, certIn);
 			} catch (Exception ex) {
 				ex.printStackTrace();
+				return false;
 			}
+			return true;
 		}
 
-		private void flashBoot() {
+		private boolean flashBoot() {
 			String currentSlot = Utilities.getSystemProperty(context.getString(R.string.slot_prop));
 			if (postInstall) {
 				if (currentSlot.equals("_b")) {
@@ -175,39 +196,46 @@ public class MagiskInstaller {
 					currentSlot = "_b";
 				}
 			}
-			Utilities.pullBootimage(Environment.getExternalStorageDirectory() + "/boot.img", context.getString(R.string.boot_block_name) + currentSlot);
+			Utilities.pullBootimage(bootImagePath, context.getString(R.string.boot_block_name) + currentSlot);
+			//No real way to verify yet
+			return true;
 		}
 
 		@Override
-		protected Boolean doInBackground(String... params) {
-			String magiskPath = params[0];
-
+		protected Enum doInBackground(Void... params) {
 			publishProgress(R.string.extracting_magisk);
-			extractMagisk(magiskPath);
+			if(!extractMagisk()) {
+				return MagiskInstallCodes.EXTRACT_FAILED;
+			}
 
 			publishProgress(R.string.modifying_boot_image);
-			modBootImage(new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout");
+			MagiskInstallCodes modBootImageRet = modBootImage();
+			if(modBootImageRet != MagiskInstallCodes.SUCCESS) {
+				return modBootImageRet;
+			}
 
 			boolean isSigned = false;
-			try (InputStream in = new FileInputStream(new File(Environment.getExternalStorageDirectory() + "/boot.img"))) {
+			try (InputStream in = new FileInputStream(new File(magiskStockBootPath))) {
 				isSigned = SignBoot.verifySignature(in, null);
 			} catch (Exception e) {
 				e.printStackTrace();
+				return MagiskInstallCodes.SIGNING_FAILED;
 			}
 
 			if (isSigned) {
 				publishProgress(R.string.signing_boot_image);
-				signBootImage(new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout");
+				if(!signBootImage()) {
+					return MagiskInstallCodes.SIGNING_FAILED;
+				}
 
-				Shell.runCommand("mv -f " + new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout/signed.img " + bootImagePath);
+				Shell.runCommand("mv -f \"" + magiskSignedBootPath + "\" \"" + bootImagePath + "\"");
 			} else {
-				Shell.runCommand("mv -f " + new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout/new-boot.img " + bootImagePath);
+				Shell.runCommand("mv -f \"" + magiskBootPath + " \"" + bootImagePath + "\"");
 			}
 			Shell.closeShell();
 
 			publishProgress(R.string.installing_boot_image);
-			flashBoot();
-			return true;
+			return (flashBoot()) ? MagiskInstallCodes.SUCCESS:MagiskInstallCodes.INSTALLING_FAILED;
 		}
 
 		@Override
@@ -216,10 +244,19 @@ public class MagiskInstaller {
 		}
 
 		@Override
-		protected void onPostExecute(Boolean success) {
-			callback.magiskInstallComplete(success);
+		protected void onPostExecute(Enum retCode) {
+			callback.magiskInstallComplete((MagiskInstallCodes) retCode);
 		}
 
+	}
+
+	public enum MagiskInstallCodes {
+		SUCCESS,
+		EXTRACT_FAILED,
+		BOOT_IMAGE_COPY_FAILED,
+		MODIFYING_FAILED,
+		SIGNING_FAILED,
+		INSTALLING_FAILED
 	}
 
 }
