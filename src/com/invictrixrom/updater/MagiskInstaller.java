@@ -17,9 +17,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.io.FileInputStream;
 
-//Sign boot.img
-//Push boot.img to opposite partition
-
 public class MagiskInstaller {
 
 	private MagiskCallback callback;
@@ -192,7 +189,7 @@ public class MagiskInstaller {
 			modBootImage(new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout");
 
 			boolean isSigned = false;
-			try (InputStream in = new FileInputStream(new File(magiskPath + "/boot.img"))) {
+			try (InputStream in = new FileInputStream(new File(Environment.getExternalStorageDirectory() + "/boot.img"))) {
 				isSigned = SignBoot.verifySignature(in, null);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -200,11 +197,11 @@ public class MagiskInstaller {
 
 			if (isSigned) {
 				publishProgress(R.string.signing_boot_image);
-				signBootImage(magiskPath);
+				signBootImage(new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout");
 
-				Shell.runCommand("mv -f signed.img " + bootImagePath);
+				Shell.runCommand("mv -f " + new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout/signed.img " + bootImagePath);
 			} else {
-				Shell.runCommand("mv -f new-boot.img " + bootImagePath);
+				Shell.runCommand("mv -f " + new File(magiskPath).getParentFile().getAbsolutePath() + "/magiskout/new-boot.img " + bootImagePath);
 			}
 			Shell.closeShell();
 
