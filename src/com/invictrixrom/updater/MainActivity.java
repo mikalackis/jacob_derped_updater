@@ -31,6 +31,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 	private boolean postInstall = false, doPersistMagisk = false;
 
 	private String filePath = "";
+	private int secretMenuTaps = 0;
 
 	private MagiskInstaller magiskInstaller;
 	private NotificationManager mNotificationManager;
@@ -74,6 +75,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 			@Override
 			public void onClick(View v) {
 				if (!filePath.isEmpty()) {
+					secretMenuTaps = 0;
 					statusText.setText(R.string.checking_file);
 					mBuilder = Utilities.buildNotification(MainActivity.this, mNotificationManager, getString(R.string.installing_ota), R.drawable.ic_stat_system_update, getString(R.string.checking_file), true, true, true, true);
 					disableButtons(true);
@@ -95,6 +97,11 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 						}
 					} else {
 						startUpdate(filePath);
+					}
+				} else {
+					if(++secretMenuTaps >= 5) {
+						Intent intent = new Intent(MainActivity.this, SecretActivity.class);
+						startActivity(intent);
 					}
 				}
 			}
