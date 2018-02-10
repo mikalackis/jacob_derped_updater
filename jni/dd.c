@@ -16,7 +16,7 @@ jboolean dd(char* input, char* output) {
 	if (inputFile < 0)
 		return JNI_FALSE;
 
-	outputFile = open(output, O_WRONLY | O_TRUNC, 0755);
+	outputFile = open(output, O_WRONLY | O_CREAT | O_TRUNC, 0755);
 	if (outputFile < 0)
 		goto out_error;
 
