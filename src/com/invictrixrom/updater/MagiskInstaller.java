@@ -156,7 +156,7 @@ public class MagiskInstaller {
 		}
 
 		private MagiskInstallCodes modBootImage() {
-			Shell.runCommand("chmod 755 \"" + magiskInstallPath + "/*\"");
+			Shell.runCommand("chmod 755 \"" + magiskInstallPath + "\"/*");
 			magiskStockBootPath = magiskInstallPath + "/boot.img";
 			magiskBootPath = magiskInstallPath + "/new-boot.img";
 			magiskSignedBootPath = magiskInstallPath + "/signed.img";
