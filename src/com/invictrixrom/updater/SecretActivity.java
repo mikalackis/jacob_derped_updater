@@ -14,7 +14,7 @@ public class SecretActivity extends Activity {
 
 	private RadioGroup radioSlot;
 	private RadioButton slotAButton, slotBButton;
-	private Button pickerButton, installButton;
+	private Button pickerButton, installButton, pullButton;
 	private String filePath;
 
 	@Override
@@ -25,6 +25,7 @@ public class SecretActivity extends Activity {
 		radioSlot = findViewById(R.id.radio_slot);
 		installButton = findViewById(R.id.install_bootimage);
 		pickerButton = findViewById(R.id.choose_bootimage);
+		pullButton = findViewById(R.id.pull_bootimage);
 		slotAButton = findViewById(R.id.slot_a);
 		slotBButton = findViewById(R.id.slot_b);
 
@@ -38,7 +39,7 @@ public class SecretActivity extends Activity {
 		installButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				if(!filePath.equals("")) {
+				if(filePath != null && !filePath.equals("")) {
 					int selectedSlotId = radioSlot.getCheckedRadioButtonId();
 					String currentSlot = "";
 					if(selectedSlotId == R.id.slot_a) {
@@ -48,6 +49,20 @@ public class SecretActivity extends Activity {
 					}
 					Utilities.pullBootimage(filePath, getString(R.string.boot_block_name) + currentSlot);
 				}
+			}
+		});
+
+		pullButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				int selectedSlotId = radioSlot.getCheckedRadioButtonId();
+				String currentSlot = "";
+				if(selectedSlotId == R.id.slot_a) {
+					currentSlot = "_a";
+				} else {
+					currentSlot = "_b";
+				}
+				Utilities.pullBootimage(getString(R.string.boot_block_name) + currentSlot, "/sdcard/boot.img");
 			}
 		});
 
