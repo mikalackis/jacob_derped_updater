@@ -144,7 +144,7 @@ public class MagiskInstaller {
 				magiskOut = new FileOutputStream(outFile);
 				Utilities.extractFromZip(magiskZipPath, "common/util_functions.sh", magiskOut);
 
-				outFile = new File(magiskInstallPath + "/update_binary");
+				outFile = new File(magiskInstallPath + "/update-binary");
 				magiskOut = new FileOutputStream(outFile);
 				Utilities.extractFromZip(magiskZipPath, "META-INF/com/google/android/update-binary", magiskOut);
 
