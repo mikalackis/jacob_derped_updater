@@ -179,8 +179,8 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 	@Override
 	public void magiskInstallComplete(MagiskInstaller.MagiskInstallCodes statusCode) {
 		boolean success = statusCode == MagiskInstaller.MagiskInstallCodes.SUCCESS;
+		updateStatusProgress(100, 100, false);
 		finishTask((success ? R.string.magisk_install_finished : R.string.magisk_install_failed), (success ? R.string.magisk_installed : Utilities.getMagiskCode(statusCode)), !success);
-		updateStatusProgress(100, 0, false);
 	}
 
 	@Override
@@ -218,9 +218,6 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 	public void updateStatusChange(int status) {
 		int statusString = Utilities.getUpdaterStatus(status);
 		updateStatusText(statusString);
-		if(status == UpdateEngine.UpdateStatusConstants.UPDATED_NEED_REBOOT) {
-			updateComplete(UpdateEngine.ErrorCodeConstants.SUCCESS);
-		}
 	}
 
 	@Override
@@ -303,8 +300,13 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 		mBuilder = Utilities.finishNotification(mNotificationManager, mBuilder, getString(resTitle), getString(resStatus), isError, R.drawable.ic_stat_error, R.drawable.ic_stat_success, true);
 	}
 
-	private void disableButtons(boolean disable) {
-		chooseButton.setEnabled(disable);
-		installButton.setEnabled(disable);
+	private void disableButtons(final boolean disable) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				chooseButton.setEnabled(disable);
+				installButton.setEnabled(disable);
+			}
+		});
 	}
 }
