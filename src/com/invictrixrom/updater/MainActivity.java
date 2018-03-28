@@ -44,6 +44,8 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 
 		doPersistMagisk = shouldPersistMagisk();
 
+		new File(Environment.getExternalStorageDirectory() + "/Updater").mkdir();
+
 		chooseButton = findViewById(R.id.choose_zip);
 		installButton = findViewById(R.id.install);
 		statusText = findViewById(R.id.status);
@@ -80,7 +82,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 					mBuilder = Utilities.buildNotification(MainActivity.this, mNotificationManager, getString(R.string.installing_ota), R.drawable.ic_stat_system_update, getString(R.string.checking_file), true, true, true, true);
 					disableButtons(true);
 					progressBar.setIndeterminate(true);
-					File cachedFile = new File(getApplicationInfo().dataDir + "/update.zip");
+					File cachedFile = new File(Environment.getExternalStorageDirectory() + "/Updater/update.zip");
 					if (filePath.endsWith(".delta")) {
 						if (!cachedFile.exists()) {
 							progressBar.setIndeterminate(false);
@@ -190,7 +192,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 
 
 	private void startUpdate(String updateFile) {
-		String cachedFile = getApplicationInfo().dataDir + "/update.zip";
+		String cachedFile = Environment.getExternalStorageDirectory() + "/Updater/update.zip";
 		ZipFile zipFile;
 		try {
 			zipFile = new ZipFile(updateFile);
@@ -266,7 +268,7 @@ public class MainActivity extends Activity implements UpdaterListener, DeltaCall
 	public void deltaDone(boolean success, String resultPath) {
 		if (success) {
 			updateStatusText(R.string.finished_patching);
-			String cachedFile = getApplicationInfo().dataDir + "/update.zip";
+			String cachedFile = Environment.getExternalStorageDirectory() + "/Updater/update.zip";
 			Shell.runCommand("mv \"" + resultPath + "\" \"" + cachedFile + "\"");
 			startUpdate(cachedFile);
 		} else {
